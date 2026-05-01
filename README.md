@@ -3,7 +3,7 @@
 
 # tomli-null
 
-> A lil' TOML parser
+> A lil' TOML parser with support for non-standard `null` values (fork of `tomli`)
 
 **Table of Contents** *generated with [mdformat-toc](https://github.com/hukkin/mdformat-toc)*
 
@@ -16,6 +16,7 @@
   - [Parse a TOML file](#parse-a-toml-file)
   - [Handle invalid TOML](#handle-invalid-toml)
   - [Construct `decimal.Decimal`s from TOML floats](#construct-decimaldecimals-from-toml-floats)
+  - [Parsing `null` values](#parsing-null-values)
 - [Conversion table](#conversion-table)
 - [Exceptions](#exceptions)
 - [FAQ](#faq)
@@ -31,8 +32,8 @@
 ## Intro<a name="intro"></a>
 
 `tomli-null` is a Python library for parsing [TOML](https://toml.io),
-based on [`tomli`](https://github.com/hukkin/tomli). All features of `tomli`
-are preserved.
+based on [`tomli`](https://github.com/hukkin/tomli). It extends the parser with support
+for the `null` value, mapping it to Python's `None`. All other features of `tomli` are preserved.
 
 Unlike with `tomli`, `mypyc` wheels are **not** provided.
 
@@ -112,6 +113,23 @@ where float inaccuracies can not be tolerated.
 Illegal types are `dict` and `list`, and their subtypes.
 A `ValueError` will be raised if `parse_float` produces illegal types.
 
+### Parsing `null` values<a name="parsing-null-values"></a>
+
+```python
+import tomli_null
+
+toml_str = """
+value = null
+items = [1, null, 3]
+"""
+
+toml_dict = tomli_null.loads(toml_str)
+assert toml_dict == {"value": None, "items": [1, None, 3]}
+```
+
+The `null` keyword is parsed case-sensitively (lowercase only, just like `true` / `false`
+in standard TOML) and is mapped to Python's `None`.
+
 ## Conversion table<a name="conversion-table"></a>
 
 | TOML             | Python                                                                   |
@@ -122,6 +140,7 @@ A `ValueError` will be raised if `parse_float` produces illegal types.
 | integer          | `int`                                                                    |
 | float            | `float` (configurable with *parse_float*)                                |
 | boolean          | `bool`                                                                   |
+| **null**         | **`None`** (not standard TOML)                                           |
 | offset Date-Time | `datetime.datetime` (`tzinfo` set to an instance of `datetime.timezone`) |
 | local Date-Time  | `datetime.datetime` (`tzinfo` set to `None`)                             |
 | local Date       | `datetime.date`                                                          |
@@ -154,6 +173,7 @@ A `ValueError` will be raised if `parse_float` produces illegal types.
   2.1x as fast as [toml](https://pypi.org/project/toml/)
 - outputs [basic data types](#conversion-table) only
 - thoroughly tested: 100% branch coverage
+- **supports non-standard `null` values**, mapped to Python `None`
 
 ### Is comment preserving round-trip parsing supported?<a name="is-comment-preserving-round-trip-parsing-supported"></a>
 
@@ -177,11 +197,12 @@ and `tomli-null` intends to be minimal.
 
 ## Performance<a name="performance"></a>
 
-*`tomli-null`'s performance is identical to `tomli`'s.* The benchmark below is reproduced
-from `tomli`.
+*`tomli-null`'s performance is identical to `tomli`'s – the null addition introduces negligible
+overhead.* The benchmark below is reproduced from `tomli`.
 
 The `benchmark/` folder in this repository contains a performance benchmark for comparing
-the various Python TOML parsers.
+the various Python TOML parsers. Note that **data for the benchmark do not contain `null` values**,
+since none of alternative parsers under comparison support them.
 
 Below are the results for commit
 [064e492](https://github.com/asrelo/tomli_null/tree/064e492919b2338def788753b8c981c9131334c0).

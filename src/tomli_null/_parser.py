@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
+# SPDX-FileCopyrightText: 2026 Vyacheslav Syropyatov
 
 from __future__ import annotations
 
@@ -691,6 +692,11 @@ def parse_value(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, Any]:
     if char == "f":
         if src.startswith("false", pos):
             return pos + 5, False
+
+    # Null (non-standard)
+    if char == "n":
+        if src.startswith("null", pos):
+            return pos + 4, None
 
     # Arrays
     if char == "[":

@@ -23,6 +23,8 @@ def convert(obj):
         return {"type": "string", "value": obj}
     elif isinstance(obj, bool):
         return {"type": "bool", "value": str(obj).lower()}
+    elif obj is None:
+        return {"type": "null", "value": "null"}
     elif isinstance(obj, int):
         return {"type": "integer", "value": str(obj)}
     elif isinstance(obj, float):
