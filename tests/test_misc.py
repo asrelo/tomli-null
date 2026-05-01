@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
-# Licensed to PSF under a Contributor Agreement.
 
 import copy
 import datetime
@@ -11,6 +10,7 @@ import sys
 import tempfile
 import unittest
 
+from tests import support
 from . import tomllib
 
 
@@ -33,16 +33,8 @@ class TestMiscellaneous(unittest.TestCase):
             file_path.write_text(content)
 
             with open(file_path, "r") as txt_f:
-                with self.assertRaises(TypeError) as exc_info:
+                with self.assertRaises(TypeError):
                     tomllib.load(txt_f)  # type: ignore[arg-type]
-            # Mypyc extension leads to different message than pure Python
-            self.assertIn(
-                str(exc_info.exception),
-                (
-                    "File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`",  # noqa: E501
-                    "bytes object expected; got str",
-                ),
-            )
 
     def test_parse_float(self):
         doc = """
@@ -100,52 +92,21 @@ class TestMiscellaneous(unittest.TestCase):
         }
         self.assertEqual(obj_copy, expected_obj)
 
+    @support.skip_if_unlimited_stack_size
+    @unittest.skipIf(support.is_wasi, "https://github.com/python/cpython/issues/108851")
     def test_inline_array_recursion_limit(self):
-        nest_count = 470
+        # 465 with default recursion limit
+        nest_count = int(sys.getrecursionlimit() * 0.465)
         recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
         tomllib.loads(recursive_array_toml)
 
-        nest_count = sys.getrecursionlimit() + 2
-        recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
-        with self.assertRaisesRegex(
-            RecursionError,
-            r"maximum recursion depth exceeded"
-            r"|"
-            r"TOML inline arrays/tables are nested more than the allowed [0-9]+ levels",
-        ):
-            tomllib.loads(recursive_array_toml)
-
+    @support.skip_if_unlimited_stack_size
+    @unittest.skipIf(support.is_wasi, "https://github.com/python/cpython/issues/108851")
     def test_inline_table_recursion_limit(self):
-        nest_count = 310
+        # 310 with default recursion limit
+        nest_count = int(sys.getrecursionlimit() * 0.31)
         recursive_table_toml = nest_count * "key = {" + nest_count * "}"
         tomllib.loads(recursive_table_toml)
-
-        nest_count = sys.getrecursionlimit() + 2
-        recursive_table_toml = nest_count * "key = {" + nest_count * "}"
-        with self.assertRaisesRegex(
-            RecursionError,
-            r"maximum recursion depth exceeded"
-            r"|"
-            r"TOML inline arrays/tables are nested more than the allowed [0-9]+ levels",
-        ):
-            tomllib.loads(recursive_table_toml)
-
-    def test_key_recursion_limit(self):
-        nest_count = 310
-        nested_key_toml = "a." * nest_count + "a = 1"
-        tomllib.loads(nested_key_toml)
-
-        nest_count = sys.getrecursionlimit() - 2
-        nested_key_toml = "a." * nest_count + "a = 1"
-        tomllib.loads(nested_key_toml)
-
-        nest_count = sys.getrecursionlimit() + 2
-        nested_key_toml = "a." * nest_count + "a = 1"
-        with self.assertRaisesRegex(
-            RecursionError,
-            r"TOML key has more than the allowed [0-9]+ parts",
-        ):
-            tomllib.loads(nested_key_toml)
 
     def test_types_import(self):
         """Test that `_types` module runs.

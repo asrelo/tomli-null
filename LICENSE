@@ -1,6 +1,40 @@
-MIT License
-
+Copyright (c) 2001 Python Software Foundation
 Copyright (c) 2021 Taneli Hukkinen
+Copyright (c) 2026 Vyacheslav Syropyatov
+
+--------
+
+This software is distributed under the terms of the MIT license, see the text
+in this file below.
+
+This software is based on tomli 2.4.1
+(https://github.com/hukkin/tomli/tree/2.4.1), which is licensed under the terms
+of the MIT license, see the file "legal/tomli/LICENSE".
+
+This software contains parts from CPython 3.14.1
+(https://github.com/python/cpython/tree/v3.14.4), which are licensed under
+the terms of the Python Software Foundation License Version 2,
+see the license and the copyright notice in the file
+"legal/CPython/LICENSE_PSFv2".
+
+Inventory of code incorporated from CPython:
+
+1. "tests/support.py" from parts of CPython's "Lib/tests/support/".
+
+No substantial changes were done to the code incorporated from CPython.
+
+The documentation for this software incorporates parts of documentation
+from CPython 3.14.1 (https://github.com/python/cpython/tree/v3.14.4) regarding
+the tomllib package in the standard Python library, which are licensed
+under the terms of the BSD Zero Clause License,
+see "legal/CPython/LICENSE_BSD_zero_clause".
+
+The original "LICENSE" file for CPython 3.14.1 is available
+at "legal/CPython/orig/LICENSE".
+
+--------
+
+MIT License
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

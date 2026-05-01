@@ -7,7 +7,7 @@ To generate and read results:
 
 from pathlib import Path
 
-import tomli
+import tomli_null
 
 benchmark_toml = (
     (Path(__file__).parent.parent / "benchmark" / "data.toml").read_bytes().decode()
@@ -15,4 +15,4 @@ benchmark_toml = (
 
 # Run this a few times to emphasize over imports and other overhead above.
 for _ in range(1000):
-    tomli.loads(benchmark_toml)
+    tomli_null.loads(benchmark_toml)

@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
-# Licensed to PSF under a Contributor Agreement.
 
 from __future__ import annotations
 
@@ -10,11 +9,11 @@ import re
 
 TYPE_CHECKING = False
 if TYPE_CHECKING:
-    from typing import Any, Final
+    from typing import Any
 
     from ._types import ParseFloat
 
-_TIME_RE_STR: Final = r"""
+_TIME_RE_STR = r"""
 ([01][0-9]|2[0-3])             # hours
 :([0-5][0-9])                  # minutes
 (?:
@@ -23,7 +22,7 @@ _TIME_RE_STR: Final = r"""
 )?
 """
 
-RE_NUMBER: Final = re.compile(
+RE_NUMBER = re.compile(
     r"""
 0
 (?:
@@ -42,8 +41,8 @@ RE_NUMBER: Final = re.compile(
 """,
     flags=re.VERBOSE,
 )
-RE_LOCALTIME: Final = re.compile(_TIME_RE_STR, flags=re.VERBOSE)
-RE_DATETIME: Final = re.compile(
+RE_LOCALTIME = re.compile(_TIME_RE_STR, flags=re.VERBOSE)
+RE_DATETIME = re.compile(
     rf"""
 ([0-9]{{4}})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])  # date, e.g. 1988-10-27
 (?:

@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
-# Licensed to PSF under a Contributor Agreement.
-
-from __future__ import annotations
 
 from typing import Any
 import unittest
@@ -45,18 +42,15 @@ class TestError(unittest.TestCase):
     def test_type_error(self):
         with self.assertRaises(TypeError) as exc_info:
             tomllib.loads(b"v = 1")  # type: ignore[arg-type]
-        # Mypyc extension leads to different message than pure Python
-        self.assertIn(
-            str(exc_info.exception),
-            ("Expected str object, not 'bytes'", "str object expected; got bytes"),
-        )
+        self.assertEqual(str(exc_info.exception), "Expected str object, not 'bytes'")
 
         with self.assertRaises(TypeError) as exc_info:
             tomllib.loads(False)  # type: ignore[arg-type]
-        # Mypyc extension leads to different message than pure Python
-        self.assertIn(
-            str(exc_info.exception),
-            ("Expected str object, not 'bool'", "str object expected; got bool"),
+        self.assertEqual(str(exc_info.exception), "Expected str object, not 'bool'")
+
+    def test_module_name(self):
+        self.assertEqual(
+            tomllib.TOMLDecodeError("", "", 0).__module__, tomllib.__name__
         )
 
     def test_invalid_parse_float(self):

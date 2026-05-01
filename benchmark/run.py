@@ -9,7 +9,7 @@ import rtoml
 import toml
 import tomlkit
 
-import tomli
+import tomli_null
 
 
 def benchmark(
@@ -49,7 +49,7 @@ def run(run_count: int) -> None:
     # fmt: off
     baseline = benchmark("rtoml", run_count, lambda: rtoml.loads(test_data), col_width)  # noqa: E501
     benchmark("pytomlpp", run_count, lambda: pytomlpp.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
-    benchmark("tomli", run_count, lambda: tomli.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
+    benchmark("tomli_null", run_count, lambda: tomli_null.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
     benchmark("toml", run_count, lambda: toml.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
     benchmark("tomlkit", run_count, lambda: tomlkit.parse(test_data), col_width, compare_to=baseline)  # noqa: E501
     # fmt: on

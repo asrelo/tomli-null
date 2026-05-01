@@ -7,11 +7,11 @@ with atheris.instrument_imports():
 
     import tomli_w
 
-    import tomli
+    import tomli_null
 
 # Disable any caching used so that the same lines of code run
 # on a given input consistently.
-tomli._re.cached_tz = tomli._re.cached_tz.__wrapped__
+tomli_null._re.cached_tz = tomli_null._re.cached_tz.__wrapped__
 
 # Suppress all warnings.
 warnings.simplefilter("ignore")
@@ -23,8 +23,8 @@ def test_one_input(input_bytes: bytes) -> None:
     data = fdp.ConsumeUnicode(sys.maxsize)
 
     try:
-        toml_obj = tomli.loads(data)
-    except (tomli.TOMLDecodeError, RecursionError):
+        toml_obj = tomli_null.loads(data)
+    except (tomli_null.TOMLDecodeError, RecursionError):
         return
     except BaseException:
         print_err(data)
@@ -38,7 +38,7 @@ def test_one_input(input_bytes: bytes) -> None:
         print_err(data)
         raise
 
-    roundtripped_obj = tomli.loads(recovered_data)
+    roundtripped_obj = tomli_null.loads(recovered_data)
     normalize_toml_obj(roundtripped_obj)
     normalize_toml_obj(toml_obj)
     if roundtripped_obj != toml_obj:

@@ -1,8 +1,7 @@
-[![Build Status](https://github.com/hukkin/tomli/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/hukkin/tomli/actions?query=workflow%3ATests+branch%3Amaster+event%3Apush)
-[![codecov.io](https://codecov.io/gh/hukkin/tomli/branch/master/graph/badge.svg)](https://codecov.io/gh/hukkin/tomli)
-[![PyPI version](https://img.shields.io/pypi/v/tomli)](https://pypi.org/project/tomli)
+[![Build Status](https://github.com/asrelo/tomli_null/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/asrelo/tomli_null/actions?query=workflow%3ATests+branch%3Amaster+event%3Apush)
+[![PyPI version](https://img.shields.io/pypi/v/tomli_null)](https://pypi.org/project/tomli_null)
 
-# Tomli
+# tomli-null
 
 > A lil' TOML parser
 
@@ -17,40 +16,32 @@
   - [Parse a TOML file](#parse-a-toml-file)
   - [Handle invalid TOML](#handle-invalid-toml)
   - [Construct `decimal.Decimal`s from TOML floats](#construct-decimaldecimals-from-toml-floats)
-  - [Building a `tomli`/`tomllib` compatibility layer](#building-a-tomlitomllib-compatibility-layer)
+- [Conversion table](#conversion-table)
+- [Exceptions](#exceptions)
 - [FAQ](#faq)
   - [Why this parser?](#why-this-parser)
   - [Is comment preserving round-trip parsing supported?](#is-comment-preserving-round-trip-parsing-supported)
   - [Is there a `dumps`, `write` or `encode` function?](#is-there-a-dumps-write-or-encode-function)
-  - [How do TOML types map into Python types?](#how-do-toml-types-map-into-python-types)
 - [Performance](#performance)
-  - [Mypyc generated wheel](#mypyc-generated-wheel)
   - [Pure Python](#pure-python)
+- [License](#license)
 
 <!-- mdformat-toc end -->
 
 ## Intro<a name="intro"></a>
 
-Tomli is a Python library for parsing [TOML](https://toml.io).
-Version 2.4.0 and later are compatible with [TOML v1.1.0](https://toml.io/en/v1.1.0).
-Older versions are [TOML v1.0.0](https://toml.io/en/v1.0.0) compatible.
+`tomli-null` is a Python library for parsing [TOML](https://toml.io),
+based on [`tomli`](https://github.com/hukkin/tomli). All features of `tomli`
+are preserved.
 
-A version of Tomli, the `tomllib` module,
-was added to the standard library in Python 3.11
-via [PEP 680](https://www.python.org/dev/peps/pep-0680/).
-Tomli continues to provide a backport on PyPI for Python versions
-where the standard library module is not available
-and that have not yet reached their end-of-life.
+Unlike with `tomli`, `mypyc` wheels are **not** provided.
 
-Tomli uses [mypyc](https://github.com/mypyc/mypyc)
-to generate binary wheels for most of the widely used platforms,
-so Python 3.11+ users may prefer it over `tomllib` for improved performance.
-Pure Python wheels are available on any platform and should perform the same as `tomllib`.
+Version 1.0.0 and later are compatible with [TOML v1.1.0](https://toml.io/en/v1.1.0).
 
 ## Installation<a name="installation"></a>
 
 ```bash
-pip install tomli
+pip install tomli-null
 ```
 
 ## Usage<a name="usage"></a>
@@ -58,7 +49,7 @@ pip install tomli
 ### Parse a TOML string<a name="parse-a-toml-string"></a>
 
 ```python
-import tomli
+import tomli_null
 
 toml_str = """
 [[players]]
@@ -70,7 +61,7 @@ name = "Numminen"
 number = 27
 """
 
-toml_dict = tomli.loads(toml_str)
+toml_dict = tomli_null.loads(toml_str)
 assert toml_dict == {
     "players": [{"name": "Lehtinen", "number": 26}, {"name": "Numminen", "number": 27}]
 }
@@ -79,10 +70,10 @@ assert toml_dict == {
 ### Parse a TOML file<a name="parse-a-toml-file"></a>
 
 ```python
-import tomli
+import tomli_null
 
 with open("path_to_file/conf.toml", "rb") as f:
-    toml_dict = tomli.load(f)
+    toml_dict = tomli_null.load(f)
 ```
 
 The file must be opened in binary mode (with the `"rb"` flag).
@@ -92,62 +83,65 @@ both of which are required to correctly parse TOML.
 ### Handle invalid TOML<a name="handle-invalid-toml"></a>
 
 ```python
-import tomli
+import tomli_null
 
 try:
-    toml_dict = tomli.loads("]] this is invalid TOML [[")
-except tomli.TOMLDecodeError:
+    toml_dict = tomli_null.loads("]] this is invalid TOML [[")
+except tomli_null.TOMLDecodeError:
     print("Yep, definitely not valid.")
 ```
 
 Note that error messages are considered informational only.
-They should not be assumed to stay constant across Tomli versions.
+They should not be assumed to stay constant across `tomli-null` versions.
 
 ### Construct `decimal.Decimal`s from TOML floats<a name="construct-decimaldecimals-from-toml-floats"></a>
 
 ```python
 from decimal import Decimal
-import tomli
+import tomli_null
 
-toml_dict = tomli.loads("precision-matters = 0.982492", parse_float=Decimal)
+toml_dict = tomli_null.loads("precision-matters = 0.982492", parse_float=Decimal)
 assert isinstance(toml_dict["precision-matters"], Decimal)
 assert toml_dict["precision-matters"] == Decimal("0.982492")
 ```
 
-Note that `decimal.Decimal` can be replaced with another callable that converts a TOML float from string to a Python type.
-The `decimal.Decimal` is, however, a practical choice for use cases where float inaccuracies can not be tolerated.
+Note that `decimal.Decimal` can be replaced with another callable that converts a TOML float
+from string to a Python type. The `decimal.Decimal` is, however, a practical choice for use cases
+where float inaccuracies can not be tolerated.
 
 Illegal types are `dict` and `list`, and their subtypes.
 A `ValueError` will be raised if `parse_float` produces illegal types.
 
-### Building a `tomli`/`tomllib` compatibility layer<a name="building-a-tomlitomllib-compatibility-layer"></a>
+## Conversion table<a name="conversion-table"></a>
 
-Python versions 3.11+ ship with a version of Tomli:
-the `tomllib` standard library module.
-To build code that uses the standard library if available,
-but still works seamlessly with Python 3.6+,
-do the following.
+| TOML             | Python                                                                   |
+| ---------------- | ------------------------------------------------------------------------ |
+| TOML document    | `dict`                                                                   |
+| key              | `str`                                                                    |
+| string           | `str`                                                                    |
+| integer          | `int`                                                                    |
+| float            | `float` (configurable with *parse_float*)                                |
+| boolean          | `bool`                                                                   |
+| offset Date-Time | `datetime.datetime` (`tzinfo` set to an instance of `datetime.timezone`) |
+| local Date-Time  | `datetime.datetime` (`tzinfo` set to `None`)                             |
+| local Date       | `datetime.date`                                                          |
+| local Time       | `datetime.time`                                                          |
+| array            | `list`                                                                   |
+| table            | `dict`                                                                   |
+| inline table     | `dict`                                                                   |
+| array of tables  | `list` of `dict`s                                                        |
 
-Instead of a hard Tomli dependency, use the following
-[dependency specifier](https://packaging.python.org/en/latest/specifications/dependency-specifiers/)
-to only require Tomli when the standard library module is not available:
+## Exceptions<a name="exceptions"></a>
 
-```
-tomli >= 1.1.0 ; python_version < "3.11"
-```
+`tomli_null.TOMLDecodeError` is a subclass of `ValueError` with the following attributes:
 
-Then, in your code, import a TOML parser using the following fallback mechanism:
-
-```python
-import sys
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
-
-tomllib.loads("['This parses fine with Python 3.6+']")
-```
+| Attribute | Description                          |
+| --------- | ------------------------------------ |
+| `msg`     | The unformatted error message        |
+| `doc`     | The TOML document being parsed       |
+| `pos`     | Index in *doc* where parsing failed  |
+| `lineno`  | Line number corresponding to *pos*   |
+| `colno`   | Column number corresponding to *pos* |
 
 ## FAQ<a name="faq"></a>
 
@@ -155,77 +149,42 @@ tomllib.loads("['This parses fine with Python 3.6+']")
 
 - it's lil'
 - pure Python with zero dependencies
-- the fastest pure Python parser [\*](#pure-python):
+- the fastest pure Python parser (inherited from `tomli`) [\*](#pure-python):
   14x as fast as [tomlkit](https://pypi.org/project/tomlkit/),
   2.1x as fast as [toml](https://pypi.org/project/toml/)
-- outputs [basic data types](#how-do-toml-types-map-into-python-types) only
-- 100% spec compliant: passes all tests in
-  [toml-lang/toml-test](https://github.com/toml-lang/toml-test)
-  test suite
+- outputs [basic data types](#conversion-table) only
 - thoroughly tested: 100% branch coverage
 
 ### Is comment preserving round-trip parsing supported?<a name="is-comment-preserving-round-trip-parsing-supported"></a>
 
 No.
 
-The `tomli.loads` function returns a plain `dict` that is populated with builtin types and types from the standard library only.
-Preserving comments requires a custom type to be returned so will not be supported,
-at least not by the `tomli.loads` and `tomli.load` functions.
+The `tomli_null.loads` function returns a plain `dict` that is populated with builtin types
+and types from the standard library only. Preserving comments requires a custom type to be returned
+so will not be supported, at least not by the `tomli_null.loads` and `tomli_null.load` functions.
 
-Look into [TOML Kit](https://github.com/sdispater/tomlkit) if preservation of style is what you need.
+Look into [TOML Kit](https://github.com/sdispater/tomlkit) if preservation of style is what you
+need, but note that TOML Kit does not support extensions provided by this library.
 
 ### Is there a `dumps`, `write` or `encode` function?<a name="is-there-a-dumps-write-or-encode-function"></a>
 
-[Tomli-W](https://github.com/hukkin/tomli-w) is the write-only counterpart of Tomli, providing `dump` and `dumps` functions.
+[tomli-w](https://github.com/hukkin/tomli-w) is the write-only counterpart of `tomli`, providing
+`dump` and `dumps` functions, but note that it does not support extensions provided by this
+library.
 
-The core library does not include write capability, as most TOML use cases are read-only, and Tomli intends to be minimal.
-
-### How do TOML types map into Python types?<a name="how-do-toml-types-map-into-python-types"></a>
-
-| TOML type        | Python type         | Details                                                      |
-| ---------------- | ------------------- | ------------------------------------------------------------ |
-| Document Root    | `dict`              |                                                              |
-| Key              | `str`               |                                                              |
-| String           | `str`               |                                                              |
-| Integer          | `int`               |                                                              |
-| Float            | `float`             |                                                              |
-| Boolean          | `bool`              |                                                              |
-| Offset Date-Time | `datetime.datetime` | `tzinfo` attribute set to an instance of `datetime.timezone` |
-| Local Date-Time  | `datetime.datetime` | `tzinfo` attribute set to `None`                             |
-| Local Date       | `datetime.date`     |                                                              |
-| Local Time       | `datetime.time`     |                                                              |
-| Array            | `list`              |                                                              |
-| Table            | `dict`              |                                                              |
-| Inline Table     | `dict`              |                                                              |
+The core library does not include write capability, as most TOML use cases are read-only,
+and `tomli-null` intends to be minimal.
 
 ## Performance<a name="performance"></a>
 
-The `benchmark/` folder in this repository contains a performance benchmark for comparing the various Python TOML parsers.
+*`tomli-null`'s performance is identical to `tomli`'s.* The benchmark below is reproduced
+from `tomli`.
 
-Below are the results for commit [064e492](https://github.com/hukkin/tomli/tree/064e492919b2338def788753b8c981c9131334c0).
+The `benchmark/` folder in this repository contains a performance benchmark for comparing
+the various Python TOML parsers.
 
-### Mypyc generated wheel<a name="mypyc-generated-wheel"></a>
-
-```console
-foo@bar:~/dev/tomli$ python --version
-Python 3.14.2
-foo@bar:~/dev/tomli$ pip freeze
-pytomlpp==1.1.0
-rtoml==0.13.0
-toml==0.10.2
-tomli @ file:///home/foo/dev/tomli
-tomlkit==0.13.3
-foo@bar:~/dev/tomli$ python benchmark/run.py
-Parsing data.toml 5000 times:
-------------------------------------------------------
-    parser |  exec time | performance (more is better)
------------+------------+-----------------------------
-     rtoml |    0.328 s | baseline (100%)
-  pytomlpp |    0.365 s | 89.75%
-     tomli |    0.838 s | 39.12%
-      toml |     3.01 s | 10.90%
-   tomlkit |     20.7 s | 1.59%
-```
+Below are the results for commit
+[064e492](https://github.com/asrelo/tomli_null/tree/064e492919b2338def788753b8c981c9131334c0).
 
 ### Pure Python<a name="pure-python"></a>
 
@@ -241,3 +200,8 @@ Parsing data.toml 5000 times:
       toml |     3.03 s | 10.65%
    tomlkit |     20.6 s | 1.57%
 ```
+
+## License<a name="license"></a>
+
+`tomli-null` is distributed under the terms of the MIT license, see `LICENSE`. For detailed
+copyright and licensing information, refer to `NOTICE`.

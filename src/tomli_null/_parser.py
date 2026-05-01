@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
-# Licensed to PSF under a Contributor Agreement.
 
 from __future__ import annotations
 
-import sys
 from types import MappingProxyType
 
 from ._re import (
@@ -19,49 +17,31 @@ from ._re import (
 TYPE_CHECKING = False
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import IO, Any, Final
+    from typing import IO, Any
 
     from ._types import Key, ParseFloat, Pos
 
-# Inline tables/arrays are implemented using recursion. Pathologically
-# nested documents cause pure Python to raise RecursionError (which is OK),
-# but mypyc binary wheels will crash unrecoverably (not OK). According to
-# mypyc docs this will be fixed in the future:
-# https://mypyc.readthedocs.io/en/latest/differences_from_python.html#stack-overflows
-# Before mypyc's fix is in, recursion needs to be limited by this library.
-# Choosing `sys.getrecursionlimit()` as maximum inline table/array nesting
-# level, as it allows more nesting than pure Python, but still seems a far
-# lower number than where mypyc binaries crash.
-MAX_INLINE_NESTING: Final = sys.getrecursionlimit()
-
-# Pathologically excessive number of parts in a key runs into quadratic
-# behavior (e.g. in Flags.is_).
-# Even if keys aren't currently parsed using recursion, they name a
-# recursive structure, so it makes sense to limit it using getrecursionlimit()
-# and RecursionError.
-MAX_KEY_PARTS: Final = sys.getrecursionlimit()
-
-ASCII_CTRL: Final = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
+ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
 # Neither of these sets include quotation mark or backslash. They are
 # currently handled as separate cases in the parser functions.
-ILLEGAL_BASIC_STR_CHARS: Final = ASCII_CTRL - frozenset("\t")
-ILLEGAL_MULTILINE_BASIC_STR_CHARS: Final = ASCII_CTRL - frozenset("\t\n")
+ILLEGAL_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t")
+ILLEGAL_MULTILINE_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t\n")
 
-ILLEGAL_LITERAL_STR_CHARS: Final = ILLEGAL_BASIC_STR_CHARS
-ILLEGAL_MULTILINE_LITERAL_STR_CHARS: Final = ILLEGAL_MULTILINE_BASIC_STR_CHARS
+ILLEGAL_LITERAL_STR_CHARS = ILLEGAL_BASIC_STR_CHARS
+ILLEGAL_MULTILINE_LITERAL_STR_CHARS = ILLEGAL_MULTILINE_BASIC_STR_CHARS
 
-ILLEGAL_COMMENT_CHARS: Final = ILLEGAL_BASIC_STR_CHARS
+ILLEGAL_COMMENT_CHARS = ILLEGAL_BASIC_STR_CHARS
 
-TOML_WS: Final = frozenset(" \t")
-TOML_WS_AND_NEWLINE: Final = TOML_WS | frozenset("\n")
-BARE_KEY_CHARS: Final = frozenset(
+TOML_WS = frozenset(" \t")
+TOML_WS_AND_NEWLINE = TOML_WS | frozenset("\n")
+BARE_KEY_CHARS = frozenset(
     "abcdefghijklmnopqrstuvwxyz" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" "0123456789" "-_"
 )
-KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
-HEXDIGIT_CHARS: Final = frozenset("abcdef" "ABCDEF" "0123456789")
+KEY_INITIAL_CHARS = BARE_KEY_CHARS | frozenset("\"'")
+HEXDIGIT_CHARS = frozenset("abcdef" "ABCDEF" "0123456789")
 
-BASIC_STR_ESCAPE_REPLACEMENTS: Final = MappingProxyType(
+BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
     {
         "\\b": "\u0008",  # backspace
         "\\t": "\u0009",  # tab
@@ -93,9 +73,9 @@ class TOMLDecodeError(ValueError):
 
     def __init__(
         self,
-        msg: str | type[DEPRECATED_DEFAULT] = DEPRECATED_DEFAULT,
-        doc: str | type[DEPRECATED_DEFAULT] = DEPRECATED_DEFAULT,
-        pos: Pos | type[DEPRECATED_DEFAULT] = DEPRECATED_DEFAULT,
+        msg: str = DEPRECATED_DEFAULT,  # type: ignore[assignment]
+        doc: str = DEPRECATED_DEFAULT,  # type: ignore[assignment]
+        pos: Pos = DEPRECATED_DEFAULT,  # type: ignore[assignment]
         *args: Any,
     ):
         if (
@@ -112,11 +92,11 @@ class TOMLDecodeError(ValueError):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            if pos is not DEPRECATED_DEFAULT:
+            if pos is not DEPRECATED_DEFAULT:  # type: ignore[comparison-overlap]
                 args = pos, *args
-            if doc is not DEPRECATED_DEFAULT:
+            if doc is not DEPRECATED_DEFAULT:  # type: ignore[comparison-overlap]
                 args = doc, *args
-            if msg is not DEPRECATED_DEFAULT:
+            if msg is not DEPRECATED_DEFAULT:  # type: ignore[comparison-overlap]
                 args = msg, *args
             ValueError.__init__(self, *args)
             return
@@ -141,9 +121,9 @@ class TOMLDecodeError(ValueError):
         self.colno = colno
 
 
-def load(__fp: IO[bytes], *, parse_float: ParseFloat = float) -> dict[str, Any]:
+def load(fp: IO[bytes], /, *, parse_float: ParseFloat = float) -> dict[str, Any]:
     """Parse TOML from a binary file object."""
-    b = __fp.read()
+    b = fp.read()
     try:
         s = b.decode()
     except AttributeError:
@@ -153,17 +133,15 @@ def load(__fp: IO[bytes], *, parse_float: ParseFloat = float) -> dict[str, Any]:
     return loads(s, parse_float=parse_float)
 
 
-def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:
+def loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:
     """Parse TOML from a string."""
 
     # The spec allows converting "\r\n" to "\n", even in string
     # literals. Let's do so to simplify parsing.
     try:
-        src = __s.replace("\r\n", "\n")
+        src = s.replace("\r\n", "\n")
     except (AttributeError, TypeError):
-        raise TypeError(
-            f"Expected str object, not '{type(__s).__qualname__}'"
-        ) from None
+        raise TypeError(f"Expected str object, not {type(s).__qualname__!r}") from None
     pos = 0
     out = Output()
     header: Key = ()
@@ -228,10 +206,10 @@ class Flags:
     """Flags that map to parsed keys/namespaces."""
 
     # Marks an immutable namespace (inline array or inline table).
-    FROZEN: Final = 0
+    FROZEN = 0
     # Marks a nest that has been explicitly created and can no longer
     # be opened using the "[table]" syntax.
-    EXPLICIT_NEST: Final = 1
+    EXPLICIT_NEST = 1
 
     def __init__(self) -> None:
         self._flags: dict[str, dict[Any, Any]] = {}
@@ -420,7 +398,7 @@ def create_list_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
 def key_value_rule(
     src: str, pos: Pos, out: Output, header: Key, parse_float: ParseFloat
 ) -> Pos:
-    pos, key, value = parse_key_value_pair(src, pos, parse_float, nest_lvl=0)
+    pos, key, value = parse_key_value_pair(src, pos, parse_float)
     key_parent, key_stem = key[:-1], key[-1]
     abs_key_parent = header + key_parent
 
@@ -452,7 +430,7 @@ def key_value_rule(
 
 
 def parse_key_value_pair(
-    src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
+    src: str, pos: Pos, parse_float: ParseFloat
 ) -> tuple[Pos, Key, Any]:
     pos, key = parse_key(src, pos)
     try:
@@ -463,7 +441,7 @@ def parse_key_value_pair(
         raise TOMLDecodeError("Expected '=' after a key in a key/value pair", src, pos)
     pos += 1
     pos = skip_chars(src, pos, TOML_WS)
-    pos, value = parse_value(src, pos, parse_float, nest_lvl)
+    pos, value = parse_value(src, pos, parse_float)
     return pos, key, value
 
 
@@ -482,10 +460,6 @@ def parse_key(src: str, pos: Pos) -> tuple[Pos, Key]:
         pos = skip_chars(src, pos, TOML_WS)
         pos, key_part = parse_key_part(src, pos)
         key += (key_part,)
-        if len(key) > MAX_KEY_PARTS:
-            raise RecursionError(
-                f"TOML key has more than the allowed {MAX_KEY_PARTS} parts"
-            )
         pos = skip_chars(src, pos, TOML_WS)
 
 
@@ -510,9 +484,7 @@ def parse_one_line_basic_str(src: str, pos: Pos) -> tuple[Pos, str]:
     return parse_basic_str(src, pos, multiline=False)
 
 
-def parse_array(
-    src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
-) -> tuple[Pos, list[Any]]:
+def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list[Any]]:
     pos += 1
     array: list[Any] = []
 
@@ -520,7 +492,7 @@ def parse_array(
     if src.startswith("]", pos):
         return pos + 1, array
     while True:
-        pos, val = parse_value(src, pos, parse_float, nest_lvl)
+        pos, val = parse_value(src, pos, parse_float)
         array.append(val)
         pos = skip_comments_and_array_ws(src, pos)
 
@@ -537,7 +509,7 @@ def parse_array(
 
 
 def parse_inline_table(
-    src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
+    src: str, pos: Pos, parse_float: ParseFloat
 ) -> tuple[Pos, dict[str, Any]]:
     pos += 1
     nested_dict = NestedDict()
@@ -547,7 +519,7 @@ def parse_inline_table(
     if src.startswith("}", pos):
         return pos + 1, nested_dict.dict
     while True:
-        pos, key, value = parse_key_value_pair(src, pos, parse_float, nest_lvl)
+        pos, key, value = parse_key_value_pair(src, pos, parse_float)
         key_parent, key_stem = key[:-1], key[-1]
         if flags.is_(key, Flags.FROZEN):
             raise TOMLDecodeError(f"Cannot mutate immutable namespace {key}", src, pos)
@@ -692,17 +664,7 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
         pos += 1
 
 
-def parse_value(
-    src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
-) -> tuple[Pos, Any]:
-    if nest_lvl > MAX_INLINE_NESTING:
-        # Pure Python should have raised RecursionError already.
-        # This ensures mypyc binaries eventually do the same.
-        raise RecursionError(  # pragma: no cover
-            "TOML inline arrays/tables are nested more than the allowed"
-            f" {MAX_INLINE_NESTING} levels"
-        )
-
+def parse_value(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, Any]:
     try:
         char: str | None = src[pos]
     except IndexError:
@@ -732,11 +694,11 @@ def parse_value(
 
     # Arrays
     if char == "[":
-        return parse_array(src, pos, parse_float, nest_lvl + 1)
+        return parse_array(src, pos, parse_float)
 
     # Inline tables
     if char == "{":
-        return parse_inline_table(src, pos, parse_float, nest_lvl + 1)
+        return parse_inline_table(src, pos, parse_float)
 
     # Dates and times
     datetime_match = RE_DATETIME.match(src, pos)
