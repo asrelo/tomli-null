@@ -3,7 +3,7 @@
 This is the changelog of the fork from [`tomli`](https://github.com/hukkin/tomli).
 See the changelog of `tomli` in `CHANGELOG_UPSTREAM.md`.
 
-## [1.0.2] - 2026-05-02
+## [1.0.3] - 2026-05-02
 
 Package uploaded to PyPI.
 
